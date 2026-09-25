@@ -4,7 +4,9 @@ predict.py —— 用 predict 模型对最新一个交易日横截面打分，�
 输出 results/today_picks.csv
 """
 from __future__ import annotations
-import sys, traceback
+
+import sys
+import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -28,11 +30,11 @@ def _fmt_row(r, rank):
     vma = r.get("vma20_ratio", float("nan"))
     amt = r.get("avg_amount_20", float("nan"))
     close_s = f"{close:.2f}" if pd.notna(close) else "  N/A"
-    ret_s = f"{ret1*100:+.2f}%" if pd.notna(ret1) else "  N/A"
-    prem_s = f"{prem*100:+.1f}%" if pd.notna(prem) else "  N/A"
+    ret_s = f"{ret1 * 100:+.2f}%" if pd.notna(ret1) else "  N/A"
+    prem_s = f"{prem * 100:+.1f}%" if pd.notna(prem) else "  N/A"
     pred_s = f"{pred:.4f}" if pd.notna(pred) else "  N/A"
     vma_s = f"{vma:.2f}" if pd.notna(vma) else " N/A"
-    amt_s = f"{amt/1e8:.1f}亿" if pd.notna(amt) and amt > 0 else "  N/A"
+    amt_s = f"{amt / 1e8:.1f}亿" if pd.notna(amt) and amt > 0 else "  N/A"
     return (f"  #{rank:<3} {code} {name:<8} {stock:<6} "
             f"价{close_s:>8} 涨幅{ret_s:>8} 溢价{prem_s:>7} "
             f"量比{vma_s:>5} 成交{amt_s:>6} 置信{pred_s}")
@@ -43,7 +45,7 @@ def main():
     logger.info("=" * 60)
     logger.info("predict.py 启动")
 
-    if not (cfg.PREDICT_MODEL_DIR / "model.txt").exists():
+    if not (cfg.PREDICT_MODEL_DIR / "lgb_model.txt").exists():
         logger.error("未找到 predict 模型，请先运行 train.py")
         return
 
@@ -98,7 +100,7 @@ def main():
         filtered = latest[(latest["ret1"] >= cfg.RET1_LOW) &
                           (latest["ret1"] <= cfg.RET1_HIGH)].copy()
         logger.info("-" * 60)
-        logger.info(f"【区间过滤】当天涨幅 [{cfg.RET1_LOW*100:.0f}%, {cfg.RET1_HIGH*100:.0f}%]，"
+        logger.info(f"【区间过滤】当天涨幅 [{cfg.RET1_LOW * 100:.0f}%, {cfg.RET1_HIGH * 100:.0f}%]，"
                     f"剩余 {len(filtered)} 只（剔除 {len(latest) - len(filtered)} 只）")
 
         if len(filtered) == 0:
@@ -128,13 +130,13 @@ def main():
 
         logger.info("-" * 60)
         logger.info(f"今日 Top-{cfg.TOP_N} 推荐（明日开盘买入，"
-                    f"止盈{cfg.TAKE_PROFIT*100:.0f}%/止损{cfg.STOP_LOSS_INTRADAY*100:.0f}%）：")
+                    f"止盈{cfg.TAKE_PROFIT * 100:.0f}%/止损{cfg.STOP_LOSS_INTRADAY * 100:.0f}%）：")
         for _, r in out.iterrows():
-            logger.info(f"  {r['code']} {r.get('name','')} "
-                        f"价{r['close']:.2f} 涨幅{r['ret1']*100:+.2f}% "
-                        f"溢价{r['premium']*100:+.1f}% 置信{r['pred']:.4f}")
-            logger.info(f"    止盈 {r['take_profit']:.2f} (+{cfg.TAKE_PROFIT*100:.0f}%) | "
-                        f"止损 {r['stop_loss']:.2f} (-{cfg.STOP_LOSS_INTRADAY*100:.0f}%)")
+            logger.info(f"  {r['code']} {r.get('name', '')} "
+                        f"价{r['close']:.2f} 涨幅{r['ret1'] * 100:+.2f}% "
+                        f"溢价{r['premium'] * 100:+.1f}% 置信{r['pred']:.4f}")
+            logger.info(f"    止盈 {r['take_profit']:.2f} (+{cfg.TAKE_PROFIT * 100:.0f}%) | "
+                        f"止损 {r['stop_loss']:.2f} (-{cfg.STOP_LOSS_INTRADAY * 100:.0f}%)")
         logger.info(f"已保存: {cfg.RESULTS_DIR / 'today_picks.csv'}")
     except Exception as e:
         logger.error(f"预测异常：{e}\n{traceback.format_exc()}")

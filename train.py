@@ -67,11 +67,11 @@ def main():
 
     fcols = features.FEATURE_COLS
 
-    # 4) 训练 backtest 模型（只用 holdout 之前的数据）
+    # 4) 训练 backtest 模型（只用 holdout 之前的数据；按时间顺序 90/10 分割做早停）
     try:
         n = len(train_feat)
         split = int(n * 0.9)
-        train_feat = train_feat.sample(frac=1.0, random_state=cfg.RANDOM_SEED).reset_index(drop=True)
+        train_feat = train_feat.sort_values("trade_date").reset_index(drop=True)
         tr = train_feat.iloc[:split]
         va = train_feat.iloc[split:]
         booster_bt = M.train_model(tr[fcols], tr["label"], va[fcols], va["label"], logger)
@@ -79,13 +79,13 @@ def main():
     except Exception as e:
         logger.error(f"backtest 模型训练异常：{e}\n{traceback.format_exc()}")
 
-    # 5) 训练 predict 模型（用全部最新数据；末尾留一小段做早停）
+    # 5) 训练 predict 模型（用全部最新数据；按时间顺序末尾留 10% 做早停）
     try:
         n = len(feat)
         split = int(n * 0.9)
-        feat_shuf = feat.sample(frac=1.0, random_state=cfg.RANDOM_SEED).reset_index(drop=True)
-        tr = feat_shuf.iloc[:split]
-        va = feat_shuf.iloc[split:]
+        feat_sorted = feat.sort_values("trade_date").reset_index(drop=True)
+        tr = feat_sorted.iloc[:split]
+        va = feat_sorted.iloc[split:]
         booster_pr = M.train_model(tr[fcols], tr["label"], va[fcols], va["label"], logger)
         M.save_model_atomic(booster_pr, cfg.PREDICT_MODEL_DIR, fcols, logger)
     except Exception as e:

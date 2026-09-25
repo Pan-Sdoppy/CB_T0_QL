@@ -23,7 +23,7 @@ def main():
     logger.info("=" * 60)
     logger.info("backtest.py 启动")
 
-    if not (cfg.BACKTEST_MODEL_DIR / "model.txt").exists():
+    if not (cfg.BACKTEST_MODEL_DIR / "lgb_model.txt").exists():
         logger.error("未找到 backtest 模型，请先运行 train.py")
         return
 
